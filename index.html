@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YazılıNotları</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1a2233;
+      --muted: #6b7489;
+      --border: #e3e8f1;
+      --accent: #2563eb;
+      --accent-dark: #1e4fc0;
+      --accent-soft: #eaf1ff;
+      --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 4px 14px rgba(16, 24, 40, 0.06);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Üst şerit */
+    .topbar {
+      background: linear-gradient(135deg, #1e4fc0, #2563eb);
+      color: #fff;
+      padding: 22px 20px 26px;
+      text-align: center;
+    }
+    .topbar .names {
+      font-size: 0.85rem;
+      opacity: 0.92;
+      letter-spacing: 0.2px;
+    }
+    .topbar h1 {
+      margin: 6px 0 0;
+      font-size: 1.7rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    /* Adım göstergesi */
+    .steps {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: -14px auto 0;
+      padding: 0 16px;
+      position: relative;
+    }
+    .step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      box-shadow: var(--shadow);
+      white-space: nowrap;
+    }
+    .step.done { color: var(--accent); border-color: #c9dbff; }
+    .step.current { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+    .step-sep { color: #b6bfcf; font-size: 0.9rem; }
+
+    main {
+      flex: 1;
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 20px 12px;
+    }
+    h2 {
+      font-size: 1.15rem;
+      margin: 0 0 16px;
+      font-weight: 700;
+    }
+    .sub-h {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: -10px 0 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .choice {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      transition: transform .15s, border-color .15s, box-shadow .15s;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .choice:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+      box-shadow: 0 8px 22px rgba(37, 99, 235, 0.12);
+    }
+    .choice .name { font-weight: 700; font-size: 1.05rem; }
+    .choice .sub { color: var(--muted); font-size: 0.85rem; }
+    .choice .arrow { margin-top: 10px; color: var(--accent); font-size: 0.9rem; font-weight: 600; }
+
+    .back {
+      margin-bottom: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font: inherit;
+      font-size: 0.9rem;
+      color: var(--accent);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+    .back:hover { border-color: var(--accent); }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      padding: 22px 16px 26px;
+    }
+
+    /* Tam sayfa PDF görünümü */
+    .pdf-view {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      background: #2b2f36;
+      z-index: 20;
+    }
+    .pdf-view[hidden] { display: none; }
+    .pdf-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+    .pdf-bar .title { font-weight: 700; font-size: 0.98rem; }
+    .pdf-bar .meta { color: var(--muted); font-size: 0.8rem; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      display: inline-block;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: var(--card);
+      cursor: pointer;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn.primary:hover { background: var(--accent-dark); color: #fff; }
+    .pdf-view iframe {
+      flex: 1;
+      width: 100%;
+      border: 0;
+      background: #525659;
+    }
+    .pdf-note {
+      background: var(--card);
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 8px 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 600px) {
+      .topbar h1 { font-size: 1.4rem; }
+      .step { font-size: 0.78rem; padding: 5px 10px; }
+      .pdf-bar { padding: 10px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="names">Muhammet Çınar İlarslan ve Erdal Can Kırık</div>
+    <h1>YazılıNotları</h1>
+  </div>
+
+  <div class="steps" id="steps"></div>
+
+  <main id="app"></main>
+
+  <footer>YazılıNotları &middot; 9. Sınıf ders notları</footer>
+
+  <!-- Tam sayfa PDF görünümü -->
+  <div class="pdf-view" id="pdf-view" hidden>
+    <div class="pdf-bar">
+      <div>
+        <div class="title" id="pdf-title"></div>
+        <div class="meta" id="pdf-meta"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="pdf-back">← Geri</button>
+        <a class="btn" id="pdf-open" href="#" target="_blank" rel="noopener">Yeni sekmede aç</a>
+        <a class="btn primary" id="pdf-download" href="#" download>İndir</a>
+      </div>
+    </div>
+    <iframe id="pdf-frame" title="Ders notu PDF"></iframe>
+    <div class="pdf-note">PDF görünmüyorsa "Yeni sekmede aç" veya "İndir" düğmesini kullanın.</div>
+  </div>
+
+  <script>
+    // ==== VERİ ====
+    // Yeni sınav, dönem, ders veya PDF eklemek için yalnızca bu listeyi düzenleyin.
+    const DATA = [
+      {
+        name: "1. Yazılı",
+        donemler: [
+          {
+            name: "1. Dönem",
+            dersler: [
+              { name: "Biyoloji",               sub: "Senaryo 2", file: "pdf/biyoloji-1-donem-1-yazili-senaryo2.pdf" },
+              { name: "Coğrafya",               sub: "Senaryo 2", file: "pdf/cografya-1-donem-1-yazili-senaryo2.pdf" },
+              { name: "Kimya",                  sub: "Senaryo 3", file: "pdf/kimya-1-donem-1-yazili-senaryo3.pdf" },
+              { name: "Tarih",                  sub: "Senaryo 2", file: "pdf/tarih-1-donem-1-yazili-senaryo2.pdf" },
+              { name: "Türk Dili ve Edebiyatı", sub: "Senaryo 3", file: "pdf/turk-dili-ve-edebiyat-1-donem-1-yazili-senaryo3.pdf" },
+              { name: "Din Kültürü ve Ahlak Bilgisi", sub: "Senaryo 2", file: "pdf/din-kulturu-ve-ahlak-bilgisi-1-donem-1-yazili-senaryo2.pdf" },
+              { name: "Fizik",                  sub: "Senaryo 1", file: "pdf/fizik-1-donem-1-yazili-senaryo1.pdf" }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // ==== DURUM ====
+    const state = { sinav: null, donem: null };
+    const app = document.getElementById("app");
+    const stepsEl = document.getElementById("steps");
+    const pdfView = document.getElementById("pdf-view");
+    const pdfFrame = document.getElementById("pdf-frame");
+
+    function el(tag, className, text) {
+      const e = document.createElement(tag);
+      if (className) e.className = className;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+
+    function choice(name, sub, onClick) {
+      const b = el("button", "choice");
+      b.appendChild(el("span", "name", name));
+      if (sub) b.appendChild(el("span", "sub", sub));
+      b.appendChild(el("span", "arrow", "Seç →"));
+      b.addEventListener("click", onClick);
+      return b;
+    }
+
+    function backButton(onClick) {
+      const b = el("button", "back", "← Geri");
+      b.addEventListener("click", onClick);
+      return b;
+    }
+
+    function renderSteps(current) {
+      const labels = ["Sınav", "Dönem", "Ders"];
+      stepsEl.innerHTML = "";
+      labels.forEach((label, i) => {
+        let cls = "step";
+        if (i < current) cls += " done";
+        if (i === current) cls += " current";
+        stepsEl.appendChild(el("span", cls, (i + 1) + ". " + label));
+        if (i < labels.length - 1) stepsEl.appendChild(el("span", "step-sep", "›"));
+      });
+    }
+
+    function renderSinav() {
+      renderSteps(0);
+      app.innerHTML = "";
+      app.appendChild(el("h2", "", "Sınav seçin"));
+      const grid = el("div", "grid");
+      DATA.forEach(s => {
+        grid.appendChild(choice(s.name, null, () => { state.sinav = s; state.donem = null; render(); }));
+      });
+      app.appendChild(grid);
+    }
+
+    function renderDonem() {
+      renderSteps(1);
+      app.innerHTML = "";
+      app.appendChild(backButton(() => { state.sinav = null; render(); }));
+      app.appendChild(el("h2", "", state.sinav.name + " · Dönem seçin"));
+      const grid = el("div", "grid");
+      state.sinav.donemler.forEach(d => {
+        grid.appendChild(choice(d.name, null, () => { state.donem = d; render(); }));
+      });
+      app.appendChild(grid);
+    }
+
+    function renderDers() {
+      renderSteps(2);
+      app.innerHTML = "";
+      app.appendChild(backButton(() => { state.donem = null; render(); }));
+      app.appendChild(el("h2", "", state.donem.name + " · Ders seçin"));
+      const grid = el("div", "grid");
+      state.donem.dersler.forEach(d => {
+        grid.appendChild(choice(d.name, d.sub, () => openPdf(d)));
+      });
+      app.appendChild(grid);
+    }
+
+    function openPdf(ders) {
+      document.getElementById("pdf-title").textContent = ders.name + " · " + state.sinav.name;
+      document.getElementById("pdf-meta").textContent = state.donem.name + " · " + ders.sub;
+      pdfFrame.src = ders.file;
+      document.getElementById("pdf-open").href = ders.file;
+      const dl = document.getElementById("pdf-download");
+      dl.href = ders.file;
+      dl.setAttribute("download", ders.file.split("/").pop());
+      pdfView.hidden = false;
+      history.pushState({ pdf: true }, "", "#pdf");
+    }
+
+    function closePdf(fromHistory) {
+      if (pdfView.hidden) return;
+      pdfView.hidden = true;
+      pdfFrame.src = "about:blank";
+      if (!fromHistory && location.hash === "#pdf") history.back();
+    }
+
+    document.getElementById("pdf-back").addEventListener("click", () => closePdf(false));
+    window.addEventListener("popstate", () => closePdf(true));
+
+    function render() {
+      if (!state.sinav) return renderSinav();
+      if (!state.donem) return renderDonem();
+      return renderDers();
+    }
+
+    // Sitenin uykuya geçmemesi için her 30 saniyede kendi dosyasına hafif istek
+    setInterval(() => {
+      fetch("pdf/biyoloji-1-donem-1-yazili-senaryo2.pdf", { method: "HEAD", cache: "no-store" }).catch(() => {});
+    }, 30 * 1000);
+
+    render();
+  </script>
+</body>
+</html>
