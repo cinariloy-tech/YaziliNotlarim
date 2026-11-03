@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YazılıNotları</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1a2233;
+      --muted: #6b7489;
+      --border: #e3e8f1;
+      --accent: #2563eb;
+      --accent-dark: #1e4fc0;
+      --accent-soft: #eaf1ff;
+      --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 4px 14px rgba(16, 24, 40, 0.06);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Üst şerit */
+    .topbar {
+      background: linear-gradient(135deg, #1e4fc0, #2563eb);
+      color: #fff;
+      padding: 22px 20px 26px;
+      text-align: center;
+    }
+    .topbar .names {
+      font-size: 0.85rem;
+      opacity: 0.92;
+      letter-spacing: 0.2px;
+    }
+    .topbar h1 {
+      margin: 6px 0 0;
+      font-size: 1.7rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    /* Adım göstergesi */
+    .steps {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: -14px auto 0;
+      padding: 0 16px;
+      position: relative;
+    }
+    .step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      box-shadow: var(--shadow);
+      white-space: nowrap;
+    }
+    .step.done { color: var(--accent); border-color: #c9dbff; }
+    .step.current { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+    .step-sep { color: #b6bfcf; font-size: 0.9rem; }
+
+    main {
+      flex: 1;
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 20px 12px;
+    }
+    h2 {
+      font-size: 1.15rem;
+      margin: 0 0 16px;
+      font-weight: 700;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .choice {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      transition: transform .15s, border-color .15s, box-shadow .15s;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .choice:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+      box-shadow: 0 8px 22px rgba(37, 99, 235, 0.12);
+    }
+    .choice .name { font-weight: 700; font-size: 1.05rem; }
+    .choice .sub { color: var(--muted); font-size: 0.85rem; }
+    .choice .arrow { margin-top: 10px; color: var(--accent); font-size: 0.9rem; font-weight: 600; }
+
+    .section { margin-bottom: 28px; }
+    .section-title {
+      font-size: 1rem;
+      font-weight: 800;
+      margin: 0 0 12px;
+      color: var(--accent);
+      letter-spacing: 0.2px;
+    }
+    .choice.disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+    .choice.disabled:hover { transform: none; border-color: var(--border); box-shadow: none; }
+    .back {
+      margin-bottom: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font: inherit;
+      font-size: 0.9rem;
+      color: var(--accent);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+    .back:hover { border-color: var(--accent); }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      padding: 22px 16px 26px;
+    }
+
+    /* Tam sayfa PDF görünümü */
+    .pdf-view {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      background: #2b2f36;
+      z-index: 20;
+    }
+    .pdf-view[hidden] { display: none; }
+    .pdf-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+    .pdf-bar .title { font-weight: 700; font-size: 0.98rem; }
+    .pdf-bar .meta { color: var(--muted); font-size: 0.8rem; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      display: inline-block;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: var(--card);
+      cursor: pointer;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn.primary:hover { background: var(--accent-dark); color: #fff; }
+
+    .pdf-pages {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px;
+    }
+    .pdf-pages canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      margin: 0 auto 12px;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    }
+    .pdf-note {
+      background: var(--card);
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 8px 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 600px) {
+      .topbar h1 { font-size: 1.4rem; }
+      .step { font-size: 0.78rem; padding: 5px 10px; }
+      .pdf-bar { padding: 10px 12px; }
+      .pdf-pages { padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="names">Muhammet Çınar İlarslan ve Erdal Can Kırık</div>
+    <h1>YazılıNotları</h1>
+  </div>
+
+  <div class="steps" id="steps"></div>
+
+  <main id="app"></main>
+
+  <footer>YazılıNotları &middot; 9. Sınıf ders notları</footer>
+
+  <!-- Tam sayfa PDF görünümü -->
+  <div class="pdf-view" id="pdf-view" hidden>
+    <div class="pdf-bar">
+      <div>
+        <div class="title" id="pdf-title"></div>
+        <div class="meta" id="pdf-meta"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="pdf-back">← Geri</button>
+        <a class="btn" id="pdf-open" href="#" target="_blank" rel="noopener">Yeni sekmede aç</a>
+        <a class="btn primary" id="pdf-download" href="#" download>İndir</a>
+      </div>
+    </div>
+    <div class="pdf-pages" id="pdf-pages"></div>
+    <div class="pdf-note" id="pdf-status">Yükleniyor…</div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    // ==== VERİ ====
+    // Yeni sınav, dönem, ders veya PDF eklemek için yalnızca bu listeyi düzenleyin.
+    const DATA = [
+      {
+        name: "1. Dönem",
+        sinavlar: [
+          {
+            name: "1. Yazılı",
+            dersler: [
+              { name: "Biyoloji",                   sub: "Senaryo 2", file: "pdf/biyoloji-1-donem-1-yazili-senaryo2.pdf" },
+              { name: "Coğrafya",                   sub: "Senaryo 2", file: "pdf/cografya-1-donem-1-yazili-senaryo2.pdf", test: "pdf/cografya-1-donem-1-ortak-yazili-test-senaryo2.pdf" },
+              { name: "Kimya",                      sub: "Senaryo 3", file: "pdf/kimya-1-donem-1-yazili-senaryo3.pdf", test: "pdf/kimya-1-donem-1-ortak-yazili-test-senaryo3.pdf" },
+              { name: "Tarih",                      sub: "Senaryo 2", file: "pdf/tarih-1-donem-1-yazili-senaryo2.pdf", test: "pdf/tarih-1-donem-1-ortak-yazili-test-senaryo2.pdf" },
+              { name: "Türk Dili ve Edebiyatı",     sub: "Senaryo 3", file: "pdf/turk-dili-ve-edebiyat-1-donem-1-yazili-senaryo3.pdf", test: "pdf/turk-dili-ve-edebiyat-1-donem-1-ortak-yazili-test-senaryo3.pdf" },
+              { name: "Din Kültürü ve Ahlak Bilgisi", sub: "Senaryo 2", file: "pdf/din-kulturu-ve-ahlak-bilgisi-1-donem-1-yazili-senaryo2.pdf", test: "pdf/din-kulturu-ve-ahlak-bilgisi-1-donem-1-ortak-yazili-test-senaryo2.pdf" },
+              { name: "Fizik",                      sub: "Senaryo 1", file: "pdf/fizik-1-donem-1-yazili-senaryo1.pdf", test: "pdf/fizik-1-donem-1-ortak-yazili-test-senaryo1.pdf" }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // PDF motoru (pdf.js)
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+
+    // ==== DURUM ====
+    const state = { sinav: null, donem: null, currentFile: null };
+    const app = document.getElementById("app");
+    const stepsEl = document.getElementById("steps");
+    const pdfView = document.getElementById("pdf-view");
+    const pdfPages = document.getElementById("pdf-pages");
+    const pdfStatus = document.getElementById("pdf-status");
+
+    function el(tag, className, text) {
+      const e = document.createElement(tag);
+      if (className) e.className = className;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+
+    function choice(name, sub, onClick) {
+      const b = el("button", "choice");
+      b.appendChild(el("span", "name", name));
+      if (sub) b.appendChild(el("span", "sub", sub));
+      b.appendChild(el("span", "arrow", "Seç →"));
+      b.addEventListener("click", onClick);
+      return b;
+    }
+
+    function backButton(onClick) {
+      const b = el("button", "back", "← Geri");
+      b.addEventListener("click", onClick);
+      return b;
+    }
+
+    function renderSteps(current) {
+      const labels = ["Dönem", "Sınav", "Ders"];
+      stepsEl.innerHTML = "";
+      labels.forEach((label, i) => {
+        let cls = "step";
+        if (i < current) cls += " done";
+        if (i === current) cls += " current";
+        stepsEl.appendChild(el("span", cls, label));
+        if (i < labels.length - 1) stepsEl.appendChild(el("span", "step-sep", "›"));
+      });
+    }
+
+    function renderDonem() {
+      renderSteps(0);
+      app.innerHTML = "";
+      app.appendChild(el("h2", "", "Dönem seçin"));
+      const grid = el("div", "grid");
+      DATA.forEach(d => {
+        grid.appendChild(choice(d.name, null, () => { state.donem = d; state.sinav = null; render(); }));
+      });
+      app.appendChild(grid);
+    }
+
+    function renderSinav() {
+      renderSteps(1);
+      app.innerHTML = "";
+      app.appendChild(backButton(() => { state.donem = null; render(); }));
+      app.appendChild(el("h2", "", state.donem.name + " · Sınav seçin"));
+      const grid = el("div", "grid");
+      state.donem.sinavlar.forEach(s => {
+        grid.appendChild(choice(s.name, null, () => { state.sinav = s; render(); }));
+      });
+      app.appendChild(grid);
+    }
+
+    function disabledChoice(name, note) {
+      const b = el("button", "choice disabled");
+      b.disabled = true;
+      b.appendChild(el("span", "name", name));
+      b.appendChild(el("span", "sub", note));
+      return b;
+    }
+
+    function renderDers() {
+      renderSteps(2);
+      app.innerHTML = "";
+      app.appendChild(backButton(() => { state.sinav = null; render(); }));
+      app.appendChild(el("h2", "", state.donem.name + " · " + state.sinav.name));
+
+      // Test bölümü
+      const testSec = el("section", "section");
+      testSec.appendChild(el("h3", "section-title", "Test"));
+      const testGrid = el("div", "grid");
+      state.sinav.dersler.forEach(d => {
+        if (d.test) testGrid.appendChild(choice(d.name, d.sub, () => openPdf(d, "Test")));
+      });
+      testSec.appendChild(testGrid);
+      app.appendChild(testSec);
+
+      // Not bölümü
+      const notSec = el("section", "section");
+      notSec.appendChild(el("h3", "section-title", "Not"));
+      const notGrid = el("div", "grid");
+      state.sinav.dersler.forEach(d => {
+        notGrid.appendChild(choice(d.name, d.sub, () => openPdf(d, "Not")));
+      });
+      notSec.appendChild(notGrid);
+      app.appendChild(notSec);
+    }
+
+    // ==== PDF GÖRÜNTÜLEME ====
+    // Her sayfa, ekran genişliğine sığacak şekilde çizilir.
+    let renderToken = 0;
+
+    async function renderPdf(url) {
+      const token = ++renderToken;
+      pdfPages.innerHTML = "";
+      pdfStatus.textContent = "Yükleniyor…";
+
+      if (!window.pdfjsLib) {
+        pdfStatus.textContent = "PDF motoru yüklenemedi. 'Yeni sekmede aç' ile deneyin.";
+        return;
+      }
+
+      try {
+        const doc = await pdfjsLib.getDocument(url).promise;
+        for (let n = 1; n <= doc.numPages; n++) {
+          if (token !== renderToken) return;
+          const page = await doc.getPage(n);
+          const base = page.getViewport({ scale: 1 });
+          const availableWidth = pdfPages.clientWidth - 24;
+          const cssScale = availableWidth / base.width;
+          const dpr = window.devicePixelRatio || 1;
+          const vp = page.getViewport({ scale: cssScale * dpr });
+
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.floor(vp.width);
+          canvas.height = Math.floor(vp.height);
+          pdfPages.appendChild(canvas);
+
+          await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+          pdfStatus.textContent = n + " / " + doc.numPages + " sayfa";
+        }
+        if (token === renderToken) pdfStatus.textContent = doc.numPages + " sayfa · Kaydırarak okuyabilirsiniz";
+      } catch (e) {
+        if (token !== renderToken) return;
+        // Dosya gerçekten yoksa bunu açıkça söyle
+        let exists = true;
+        try {
+          const r = await fetch(url, { method: "HEAD", cache: "no-store" });
+          exists = r.ok;
+        } catch (_) { exists = true; }
+        pdfStatus.textContent = exists
+          ? "PDF açılamadı. 'Yeni sekmede aç' ile deneyin."
+          : "Dosya bulunamadı: " + url.split("/").pop() + " (GitHub'da pdf klasöründe olmalı)";
+      }
+    }
+
+    function openPdf(ders, kind) {
+      const file = kind === "Test" ? ders.test : ders.file;
+      state.currentFile = file;
+      document.getElementById("pdf-title").textContent = ders.name + " · " + kind;
+      document.getElementById("pdf-meta").textContent = state.donem.name + " · " + state.sinav.name + " · " + ders.sub;
+      document.getElementById("pdf-open").href = file;
+      const dl = document.getElementById("pdf-download");
+      dl.href = file;
+      dl.setAttribute("download", file.split("/").pop());
+      pdfView.hidden = false;
+      pdfPages.scrollTop = 0;
+      renderPdf(file);
+      history.pushState({ pdf: true }, "", "#pdf");
+    }
+
+    function closePdf(fromHistory) {
+      if (pdfView.hidden) return;
+      pdfView.hidden = true;
+      renderToken++;
+      pdfPages.innerHTML = "";
+      state.currentFile = null;
+      if (!fromHistory && location.hash === "#pdf") history.back();
+    }
+
+    document.getElementById("pdf-back").addEventListener("click", () => closePdf(false));
+    window.addEventListener("popstate", () => closePdf(true));
+
+    // Telefon döndürülünce sayfalar yeni genişliğe göre yeniden çizilsin
+    let resizeTimer = null;
+    window.addEventListener("resize", () => {
+      if (pdfView.hidden || !state.currentFile) return;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => renderPdf(state.currentFile), 300);
+    });
+
+    function render() {
+      if (!state.donem) return renderDonem();
+      if (!state.sinav) return renderSinav();
+      return renderDers();
+    }
+
+    // Sitenin uykuya geçmemesi için her 30 saniyede kendi dosyasına hafif istek
+    setInterval(() => {
+      fetch("pdf/biyoloji-1-donem-1-yazili-senaryo2.pdf", { method: "HEAD", cache: "no-store" }).catch(() => {});
+    }, 30 * 1000);
+
+    render();
+  </script>
+</body>
+</html>
